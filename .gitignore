@@ -1,0 +1,6 @@
+# IDE
+.idea/
+*.swp
+
+# Build
+target/
