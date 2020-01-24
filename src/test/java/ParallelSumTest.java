@@ -1,6 +1,8 @@
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Function;
 
@@ -17,7 +19,7 @@ class ParallelSumTest {
 
 	@Test
 	void testTime() {
-		final int SIZE = 100_000_000;
+		final int SIZE = 1000_000_000;
 		int[] a = new int[SIZE];
 		Random rand = new Random();
 		for (int i = 0; i < SIZE; i++) {
@@ -28,18 +30,22 @@ class ParallelSumTest {
 
 		System.out.println("n processors = " + Runtime.getRuntime().availableProcessors());
 		System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "16");
+
+		int sequentialResult = measure("sequential", a, (input) -> Arrays.stream(input).sum());
 		int parallelResult = measure("parallel", a, (input) -> {
 			ParallelSum sum = new ParallelSum(input);
 			return pool.invoke(sum);
 		});
-		int sequentialResult = measure("sequential", a, (input) -> {
-			int result = 0;
-			for (int value : input) {
-				result += value;
+		int parallelStreamResult = measure("parallel stream", a, (input) -> {
+			try {
+				return pool.submit(() -> Arrays.stream(input).parallel().sum()).get();
+			} catch (InterruptedException | ExecutionException e) {
+				e.printStackTrace();
 			}
-			return result;
+			return 0;
 		});
 		assertEquals(parallelResult, sequentialResult);
+		assertEquals(parallelStreamResult, sequentialResult);
 	}
 
 	int measure(String label, int[] input, Function<int[], Integer> func) {

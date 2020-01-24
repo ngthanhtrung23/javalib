@@ -19,8 +19,8 @@ class ParallelSum extends RecursiveTask<Integer> {
 		int mid = (low + high) / 2;
 		ParallelSum left = new ParallelSum(a, low, mid);
 		ParallelSum right = new ParallelSum(a, mid + 1, high);
-		invokeAll(left, right);
-		return left.join() + right.join();
+		right.fork();
+		return left.compute() + right.join();
 	}
 
 	ParallelSum(int[] a) {
