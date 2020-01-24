@@ -1,6 +1,7 @@
 import org.junit.jupiter.api.Test;
 
 import java.util.Random;
+import java.util.concurrent.ForkJoinPool;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,30 +17,36 @@ class ParallelSumTest {
 
 	@Test
 	void testTime() {
-		final int SIZE = 10_000_000;
+		final int SIZE = 100_000_000;
 		int[] a = new int[SIZE];
 		Random rand = new Random();
 		for (int i = 0; i < SIZE; i++) {
 			a[i] = rand.nextInt();
 		}
 
-		measure(a, (input) -> {
+		ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
+
+		System.out.println("n processors = " + Runtime.getRuntime().availableProcessors());
+		System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", "16");
+		int parallelResult = measure("parallel", a, (input) -> {
 			ParallelSum sum = new ParallelSum(input);
-			return sum.compute();
+			return pool.invoke(sum);
 		});
-		measure(a, (input) -> {
+		int sequentialResult = measure("sequential", a, (input) -> {
 			int result = 0;
 			for (int value : input) {
 				result += value;
 			}
 			return result;
 		});
+		assertEquals(parallelResult, sequentialResult);
 	}
 
-	void measure(int[] input, Function<int[], Integer> func) {
+	int measure(String label, int[] input, Function<int[], Integer> func) {
 		long startTimeNanos = System.nanoTime();
 		Integer result = func.apply(input);
 		long endTimeNanos = System.nanoTime();
-		System.out.println((endTimeNanos - startTimeNanos) / 1e6 + " " + result);
+		System.out.println(label + ": " + (endTimeNanos - startTimeNanos) / 1e6 + " " + result);
+		return result;
 	}
 }

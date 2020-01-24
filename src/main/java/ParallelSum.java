@@ -9,11 +9,12 @@ class ParallelSum extends RecursiveTask<Integer> {
 
 	@Override
 	protected Integer compute() {
-		if (low > high) {
-			return 0;
-		}
-		if (low == high) {
-			return a[low];
+		if (low + 10_000 > high) {
+			int res = 0;
+			for (int i = low; i <= high; i++) {
+				res += a[i];
+			}
+			return res;
 		}
 		int mid = (low + high) / 2;
 		ParallelSum left = new ParallelSum(a, low, mid);
