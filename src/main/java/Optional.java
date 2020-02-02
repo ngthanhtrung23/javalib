@@ -13,6 +13,7 @@ public abstract class Optional<T> {
 		return Absent.withType();
 	}
 
+	@SuppressWarnings("unchecked")
 	public static <T> Optional<T> fromNullable(@Nullable T reference) {
 		return (reference == null) ? (Optional<T>) absent() : of(reference);
 	}
@@ -26,8 +27,12 @@ public abstract class Optional<T> {
 }
 
 class Absent<T> extends Optional<T> {
-	static final Absent<Object> INSTANCE = new Absent<Object>();
+	// Because of type erasure, INSTANCE will just have type {@code Absent} in runtime.
+	private static final Absent<Object> INSTANCE = new Absent<>();
 
+	// {@code Absent<Object>} will not match {@code Optional<T>} for every T. However, it should be safe to cast,
+	// because we don't really care about the type of T in {@code Absent}.
+	@SuppressWarnings("unchecked")
 	static<T> Optional<T> withType() {
 		return (Optional<T>) INSTANCE;
 	}
